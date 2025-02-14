@@ -53,8 +53,17 @@ init_audio_url = init_audio_url_template.replace("{{profile_id}}", str(specific_
 # 4. 生成分片 URL 模板
 segment_template = unquote(data['segment_template'])
 total_duration = data['end_time_millis'] - data['start_time_millis']
-segment_count = total_duration // (data['contents']
-                                   [0]['segment_length'] * 1000)
+# 將 segment_length 轉換為毫秒
+segment_length_ms = data['contents'][0]['segment_length'] * 1000
+
+# 計算 segment_count，如果有餘數則加 1
+segment_count = total_duration // segment_length_ms
+if total_duration % segment_length_ms != 0:
+    segment_count += 1
+
+logging.info(f"Total duration: {total_duration} ms")
+logging.info(f"Segment length: {segment_length_ms} ms")
+logging.info(f"Segment count: {segment_count}")
 
 # 5. 創建下載目錄
 output_video_dir = "spotify_video/video"
@@ -133,7 +142,7 @@ else:
             await asyncio.gather(*tasks)
 
     # 設定同時進行的請求數量
-    batch_size = 25  # 根據需求調整批次大小
+    batch_size = 40  # 根據需求調整批次大小
 
     async def main():
         for i in range(0, segment_count, batch_size):
